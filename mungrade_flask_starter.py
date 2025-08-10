@@ -5,6 +5,7 @@ from flask_cors import CORS
 from scoring.engine import noter  # ton moteur de scoring
 from typing import Dict, Optional
 from data_providers.yahoo_client import fetch_metrics
+from data_providers.yahoo_search import search_companies  # ✅ Import ajouté
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -137,6 +138,13 @@ def prefill():
         "ticker": ticker,
     }
     return jsonify({"found": True, "data": data})
+
+# ✅ Nouvelle route ajoutée
+@app.route("/search", methods=["GET"])
+def search():
+    q = request.args.get("q", "").strip()
+    results = search_companies(q, limit=8)
+    return jsonify({"query": q, "results": results})
 
 # ---------- Lancement ----------
 if __name__ == "__main__":

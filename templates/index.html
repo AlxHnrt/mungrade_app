@@ -4,7 +4,10 @@
 <div class="card" style="margin-bottom:16px">
   <h2 style="margin:0 0 10px 0;">Recherche d’entreprise</h2>
   <div class="form-grid" style="grid-template-columns: 1fr auto">
-    <input id="prefillQuery" type="text" placeholder="Ex : RR.L, Rolls-Royce, SU.PA, GE…">
+    <div style="position:relative">
+      <input id="prefillQuery" type="text" placeholder="Ex : Rolls-Royce, Schneider, GE, RR.L, SU.PA…" oninput="liveSearch(this.value)">
+      <div id="resultsBox" style="position:absolute; left:0; right:0; top:44px; background:#0b0e11; border:1px solid var(--border); border-radius:10px; display:none; z-index:10;"></div>
+    </div>
     <button class="btn btn-secondary" type="button" onclick="prefill()">Préremplir</button>
   </div>
   <div id="prefillMsg" style="margin-top:8px; color:var(--muted)"></div>
@@ -76,11 +79,39 @@
 {% endif %}
 
 <script>
+let _timer=null;
+function tplItem(item){
+  const label = `${item.symbol} — ${item.name} (${item.exchange||item.type||''})`;
+  return `<div class="rs-item" data-symbol="${item.symbol}" onclick="pickSymbol('${item.symbol}','${label.replace(/'/g,'&#39;')}')">${label}</div>`;
+}
+function liveSearch(q){
+  const box = document.getElementById('resultsBox');
+  clearTimeout(_timer);
+  if(!q || q.length < 2){ box.style.display='none'; box.innerHTML=''; return; }
+  _timer = setTimeout(async ()=>{
+    try{
+      const res = await fetch(`/search?q=${encodeURIComponent(q)}`);
+      const js = await res.json();
+      if(!js.results || js.results.length===0){ box.style.display='none'; box.innerHTML=''; return; }
+      box.innerHTML = js.results.map(tplItem).join('');
+      box.style.display = 'block';
+    }catch(e){
+      box.style.display='none'; box.innerHTML='';
+      console.error(e);
+    }
+  }, 200);
+}
+function pickSymbol(symbol, label){
+  document.getElementById('prefillQuery').value = symbol;
+  const box = document.getElementById('resultsBox');
+  box.style.display='none'; box.innerHTML='';
+  prefill(); // déclenche direct le préremplissage
+}
 async function prefill(){
   const q = document.getElementById('prefillQuery').value.trim();
   const msg = document.getElementById('prefillMsg');
-  if(!q){ msg.textContent = "Tape un nom ou un ticker (ex: RR.L)"; return; }
-  msg.textContent = "Recherche…";
+  msg.textContent = q ? `Recherche ${q}…` : "Tape un nom ou un ticker";
+  if(!q) return;
   try{
     const res = await fetch(`/prefill?q=${encodeURIComponent(q)}`);
     if(!res.ok){ msg.textContent = "Aucun résultat ("+res.status+")"; return; }
@@ -94,7 +125,7 @@ async function prefill(){
       if(d.PER!==null) document.getElementById('PER').value = d.PER;
       msg.textContent = `Prérempli depuis ${d.ticker} ✅`;
     }else{
-      msg.textContent = "Aucun preset trouvé.";
+      msg.textContent = "Pas de données suffisantes.";
     }
   }catch(e){
     console.error(e);
@@ -102,4 +133,10 @@ async function prefill(){
   }
 }
 </script>
+
+<style>
+.rs-item{ padding:10px 12px; border-bottom:1px solid #151a20; cursor:pointer }
+.rs-item:last-child{ border-bottom:none }
+.rs-item:hover{ background:#11161c }
+</style>
 {% endblock %}
