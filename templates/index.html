@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MunGrade – Demo</title>
+  <style>
+    body { background:#0e0f10; color:#fff; font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu; margin:2rem; }
+    .card { background:#151718; padding:1rem; border-radius:12px; max-width:520px; }
+    label { display:block; margin:.6rem 0 .3rem; color:#c9d1d9; }
+    input, select { width:100%; padding:.6rem; border-radius:8px; border:1px solid #333; background:#0e0f10; color:#fff; }
+    button { margin-top:1rem; padding:.7rem 1rem; border:0; border-radius:8px; background:#1E8E3E; color:#fff; font-weight:600; }
+    .result, .errors { margin-top:1rem; padding:.8rem; border-radius:8px; background:#0e0f10; border:1px solid #2a2f33; }
+    .errors { border-color:#d64545; }
+    .errors li { color:#ffb4b4; }
+  </style>
+</head>
+<body>
+  <h1>MunGrade – Calcul de score</h1>
+  <div class="card">
+
+    {% if errors %}
+    <div class="errors">
+      <strong>Veuillez corriger :</strong>
+      <ul>
+        {% for e in errors %}
+        <li>{{ e }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    <form method="post" action="/score-web">
+      <label>Moat</label>
+      {% set m = (form.moat if form else 'Fort') %}
+      <select name="moat">
+        <option {{ 'selected' if m == 'Fort' else '' }}>Fort</option>
+        <option {{ 'selected' if m == 'Faible' else '' }}>Faible</option>
+        <option {{ 'selected' if m == 'Aucun' else '' }}>Aucun</option>
+      </select>
+
+      <label>Management</label>
+      {% set g = (form.management if form else 'Excellent') %}
+      <select name="management">
+        <option {{ 'selected' if g == 'Excellent' else '' }}>Excellent</option>
+        <option {{ 'selected' if g == 'Correct' else '' }}>Correct</option>
+        <option {{ 'selected' if g == 'Médiocre' else '' }}>Médiocre</option>
+      </select>
+
+      <label>ROE (%)</label>
+      <input type="number" step="0.1" name="ROE" value="{{ form.ROE if form else '18' }}" />
+
+      <label>Dette / EBITDA</label>
+      <input type="number" step="0.1" name="DetteEBITDA" value="{{ form.DetteEBITDA if form else '1.2' }}" />
+
+      <label>PER</label>
+      <input type="number" step="0.1" name="PER" value="{{ form.PER if form else '22' }}" />
+
+      <button type="submit">Calculer</button>
+    </form>
+
+    {% if result %}
+    <div class="result">
+      <strong>Score :</strong> {{ result.score }} / 100<br/>
+      <strong>Label :</strong> {{ result.label }}
+    </div>
+    {% endif %}
+
+  </div>
+</body>
+</html>
