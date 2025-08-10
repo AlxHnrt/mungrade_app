@@ -1,89 +1,109 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<title>MunGrade™ - Analyse Entreprise</title>
-<style>
-       body { font-family: Arial, sans-serif; margin: 40px; }
-       h1 { color: #2c3e50; }
-       .search-container { margin-bottom: 20px; }
-       .company-info { margin-top: 10px; display: flex; align-items: center; }
-       .company-info img { max-height: 50px; margin-right: 10px; }
-       .form-group { margin-bottom: 15px; }
-       label { display: block; font-weight: bold; margin-bottom: 5px; }
-       input, select { width: 200px; padding: 5px; }
-       button { padding: 8px 15px; cursor: pointer; }
-</style>
-</head>
-<body>
-<h1>MunGrade™</h1>
-<div class="search-container">
-<label for="search">Rechercher une entreprise :</label>
-<input type="text" id="search" placeholder="Ex: Rolls Royce">
-<button onclick="searchCompany()">Rechercher</button>
-<div id="company-display" class="company-info" style="display:none;">
-<img id="company-logo" src="" alt="Logo entreprise">
-<span id="company-name"></span>
+% extends "base.html" %}
+{% block content %}
+<div class="card" style="margin-bottom:16px">
+<h2 style="margin:0 0 10px 0;">Rechercher une entreprise</h2>
+<div class="form-grid" style="grid-template-columns: 1fr auto">
+<input id="search" type="text" placeholder="Ex : RR.L, Rolls-Royce, SU.PA, GE…">
+<button class="btn btn-secondary" type="button" onclick="searchCompany()">Rechercher</button>
 </div>
+<!-- Affichage nom + logo -->
+<div id="company-display" class="company-info" style="display:none; align-items:center; gap:12px; margin-top:12px;">
+<img id="company-logo" src="" alt="Logo entreprise" style="width:48px; height:48px; border-radius:6px; background:#fff; object-fit:contain;"
+        onerror="this.onerror=null; this.src='{{ url_for('static', filename='images/default_logo.png') }}';">
+<span id="company-name" style="font-size:1.05rem; font-weight:600;"></span>
 </div>
+<div id="prefillMsg" style="margin-top:6px; color:var(--muted)"></div>
+</div>
+<div class="card">
+<h2 style="margin:0 0 10px 0;">Moteur de scoring</h2>
 <form method="POST" action="/score-web">
-<div class="form-group">
-<label for="moat">Moat :</label>
-<select name="moat" id="moat">
-<option value="Aucun">Aucun</option>
-<option value="Faible">Faible</option>
-<option value="Fort">Fort</option>
+<div class="form-grid">
+<div>
+<label for="moat">Moat</label>
+<select id="moat" name="moat">
+<option>Aucun</option>
+<option>Faible</option>
+<option>Fort</option>
 </select>
 </div>
-<div class="form-group">
-<label for="management">Management :</label>
-<select name="management" id="management">
-<option value="Médiocre">Médiocre</option>
-<option value="Correct">Correct</option>
-<option value="Excellent">Excellent</option>
+<div>
+<label for="management">Management</label>
+<select id="management" name="management">
+<option>Médiocre</option>
+<option>Correct</option>
+<option>Excellent</option>
 </select>
 </div>
-<div class="form-group">
-<label for="ROE">ROE (%) :</label>
-<input type="text" name="ROE" id="ROE">
+<div>
+<label for="ROE">ROE (%)</label>
+<input id="ROE" name="ROE" type="text" inputmode="decimal" placeholder="ex: 18">
 </div>
-<div class="form-group">
-<label for="DetteEBITDA">Dette / EBITDA :</label>
-<input type="text" name="DetteEBITDA" id="DetteEBITDA">
+<div>
+<label for="DetteEBITDA">Dette / EBITDA</label>
+<input id="DetteEBITDA" name="DetteEBITDA" type="text" inputmode="decimal" placeholder="ex: 1.2">
 </div>
-<div class="form-group">
-<label for="PER">PER :</label>
-<input type="text" name="PER" id="PER">
+<div>
+<label for="PER">PER</label>
+<input id="PER" name="PER" type="text" inputmode="decimal" placeholder="ex: 22">
 </div>
-<button type="submit">Calculer</button>
+</div>
+<div style="margin-top:14px;">
+<button class="btn btn-primary" type="submit">Calculer</button>
+</div>
 </form>
+</div>
+{% if errors %}
+<div class="card" style="margin-top:12px; border-color:#b33;">
+<strong>Erreurs :</strong>
+<ul>
+   {% for e in errors %}<li>{{ e }}</li>{% endfor %}
+</ul>
+</div>
+{% endif %}
+{% if result %}
+<div class="card" style="margin-top:12px;">
+<h3>Résultat</h3>
+<pre>{{ result | tojson(indent=2) }}</pre>
+</div>
+{% endif %}
+{% endblock %}
+{% block scripts %}
 <script>
-       function searchCompany() {
-           const query = document.getElementById("search").value;
-           if (!query) return alert("Veuillez entrer un nom d'entreprise.");
-           fetch(`/prefill?q=${encodeURIComponent(query)}`)
-               .then(res => res.json())
-               .then(data => {
-                   if (!data.found) {
-                       alert(data.message || "Entreprise introuvable.");
-                       return;
-                   }
-                   // Afficher nom + logo
-                   document.getElementById("company-display").style.display = "flex";
-                   document.getElementById("company-name").innerText = data.data.companyName;
-                   document.getElementById("company-logo").src = data.data.companyLogo;
-                   // Préremplir formulaire
-                   document.getElementById("moat").value = data.data.moat;
-                   document.getElementById("management").value = data.data.management;
-                   document.getElementById("ROE").value = data.data.ROE ?? "";
-                   document.getElementById("DetteEBITDA").value = data.data.DetteEBITDA ?? "";
-                   document.getElementById("PER").value = data.data.PER ?? "";
-               })
-               .catch(err => {
-                   console.error(err);
-                   alert("Erreur de connexion au serveur.");
-               });
-       }
+async function searchCompany() {
+ const q = document.getElementById('search').value.trim();
+ const msg = document.getElementById('prefillMsg');
+ if(!q){ msg.textContent = "Tape un nom ou un ticker (ex: RR.L)"; return; }
+ msg.textContent = "Recherche…";
+ try{
+   const res = await fetch(`/prefill?q=${encodeURIComponent(q)}`);
+   if(!res.ok){
+     msg.textContent = "Aucun résultat ("+res.status+")";
+     document.getElementById('company-display').style.display = 'none';
+     return;
+   }
+   const js = await res.json();
+   if(!js.found){
+     msg.textContent = js.message || "Pas de données";
+     document.getElementById('company-display').style.display = 'none';
+     return;
+   }
+   const d = js.data;
+   // Afficher nom + logo
+   const box = document.getElementById('company-display');
+   document.getElementById('company-name').textContent = `${d.companyName} — ${d.ticker}`;
+   document.getElementById('company-logo').src = d.companyLogo || "{{ url_for('static', filename='images/default_logo.png') }}";
+   box.style.display = 'flex';
+   // Préremplir champs
+   if(d.moat) document.getElementById('moat').value = d.moat;
+   if(d.management) document.getElementById('management').value = d.management;
+   if(d.ROE !== null) document.getElementById('ROE').value = d.ROE;
+   if(d.DetteEBITDA !== null) document.getElementById('DetteEBITDA').value = d.DetteEBITDA;
+   if(d.PER !== null) document.getElementById('PER').value = d.PER;
+   msg.textContent = "Prérempli ✅";
+ }catch(e){
+   console.error(e);
+   msg.textContent = "Erreur réseau.";
+ }
+}
 </script>
-</body>
-</html>
+{% endblock %}
