@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}MunGrade{% endblock %}</title>
+<link rel="icon" href="{{ url_for('static', filename='images/logo_icon.jpg') }}" type="image/jpg">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+ {% block head %}{% endblock %}
+</head>
+<body>
+<header class="header">
+<a class="header__brand" href="{{ url_for('home') }}">
+<img src="{{ url_for('static', filename='images/logo_icon.jpg') }}" alt="MunGrade icon">
+<span class="header__title">MunGrade</span>
+</a>
+</header>
+<main class="container">
+   {% block content %}{% endblock %}
+</main>
+<footer class="footer">
+<img src="{{ url_for('static', filename='images/logo_full.jpg') }}" alt="MunGrade" style="height:22px;vertical-align:middle;opacity:.9">
+<div style="margin-top:10px">© {{ 2025 }} MunGrade — All rights reserved</div>
+</footer>
+ {% block scripts %}{% endblock %}
+</body>
+</html>
